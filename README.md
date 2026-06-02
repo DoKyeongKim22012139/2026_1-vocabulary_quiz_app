@@ -61,6 +61,7 @@ vocabulary_quiz_app/
 ├─ app.py        # Tkinter GUI 앱
 ├─ data.py       # 기본 단어 목록
 ├─ quiz_logic.py # 단어 선택 및 채점 로직
+├─ quiz_timer.py # 퀴즈 타이머 로직
 └─ __main__.py   # python -m 실행 진입점
 ```
 
