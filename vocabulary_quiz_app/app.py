@@ -10,6 +10,7 @@ from vocabulary_quiz_app.quiz_logic import Word, check_answer, draw_word
 
 class VocabularyQuizApp:
     def __init__(self, root: tk.Tk, words: list[Word]) -> None:
+        self.root= root
         self.words = words
         self.rng = random.Random()
         self.current: Word | None = None
@@ -21,8 +22,13 @@ class VocabularyQuizApp:
         self.default_font.configure(family="NanumGothic", size=12)
 
         root.title("Vocabulary Quiz")
-        root.geometry("420x280")
+        root.geometry("420x300")
         root.resizable(False, False)
+
+        # 엔터 누를때 정답이 적혀있으면 채점, 없으면 다음으로 넘어감 그리고 한번 더 누르면 다음 단어로 넘어감
+        root.bind("<Return>", lambda event: self.check_current() if not self.checked else self.next_word())
+        
+        self.setup_timer()
 
         self.word_var = tk.StringVar(value="단어를 불러오는 중...")
         self.feedback_var = tk.StringVar(value="")
@@ -56,10 +62,18 @@ class VocabularyQuizApp:
         self.check_button.state(["!disabled"])
         self.answer_entry.focus()
 
+        #단어 넘어갈때마다 타이머 시작
+        self.reset_and_start_timer()
+
     def check_current(self) -> None:
         if self.current is None or self.checked:
             return
         self.checked = True
+
+        # 사용자가 답을 제출하면 카운트 멈춤
+        if self.timer_job:
+            self.root.after_cancel(self.timer_job)
+        
         self.total += 1
         user_input = self.answer_entry.get()
         if check_answer(self.current, user_input):
@@ -67,5 +81,43 @@ class VocabularyQuizApp:
             self.feedback_var.set("정답입니다!")
         else:
             self.feedback_var.set(f"오답입니다. 정답: {self.current.meaning}")
+        self.score_var.set(f"Score: {self.score}/{self.total}")
+        self.check_button.state(["disabled"])
+
+    #타이머 세팅
+    def setup_timer(self) -> None:
+        self.time_limit=10
+        self.time_left=self.time_limit
+        self.timer_job=None #타이머 이벤트 취소 변수 
+
+        #타이머 글자 변수 생성 및 ui 배치
+        self.time_var = tk.StringVar(value=f"남은 시간: {self.time_left}")
+        ttk.Label(self.root, textvariable=self.time_var, font=("NanumGothic", 12, "bold"), foreground="red").pack(pady=(10, 0))
+
+    # ⏱️ [추가] 타이머를 작동시키는 핵심 카운트다운 함수들
+    def reset_and_start_timer(self) -> None:
+        if self.timer_job:
+            self.root.after_cancel(self.timer_job)
+        self.time_left = self.time_limit
+        self.time_var.set(f"남은 시간: {self.time_left}초")
+        self.update_timer()
+
+    def update_timer(self) -> None:
+        if self.checked:
+            return
+        if self.time_left > 0:
+            self.time_left -= 1
+            self.time_var.set(f"남은 시간: {self.time_left}초")
+            self.timer_job = self.root.after(1000, self.update_timer)
+        else:
+            self.time_var.set("시간 초과!")
+            self.handle_timeout()
+
+    def handle_timeout(self) -> None:
+        if self.current is None or self.checked:
+            return
+        self.checked = True
+        self.total += 1
+        self.feedback_var.set(f"시간이 초과되었습니다! 정답: {self.current.meaning}")
         self.score_var.set(f"Score: {self.score}/{self.total}")
         self.check_button.state(["disabled"])
