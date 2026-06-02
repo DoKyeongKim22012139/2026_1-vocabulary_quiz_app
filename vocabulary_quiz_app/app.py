@@ -94,7 +94,7 @@ class VocabularyQuizApp:
         self.time_var = tk.StringVar(value=f"남은 시간: {self.time_left}")
         ttk.Label(self.root, textvariable=self.time_var, font=("NanumGothic", 12, "bold"), foreground="red").pack(pady=(10, 0))
 
-    # ⏱️ [추가] 타이머를 작동시키는 핵심 카운트다운 함수들
+    #타이머 리셋하고 다시 시작하는 함수
     def reset_and_start_timer(self) -> None:
         if self.timer_job:
             self.root.after_cancel(self.timer_job)
@@ -102,17 +102,19 @@ class VocabularyQuizApp:
         self.time_var.set(f"남은 시간: {self.time_left}초")
         self.update_timer()
 
+    # 카운트 다운 함수
     def update_timer(self) -> None:
-        if self.checked:
+        if self.checked: #채점이 완료된 상태면 타이머 정지
             return
         if self.time_left > 0:
             self.time_left -= 1
             self.time_var.set(f"남은 시간: {self.time_left}초")
-            self.timer_job = self.root.after(1000, self.update_timer)
+            self.timer_job = self.root.after(1000, self.update_timer) 
         else:
             self.time_var.set("시간 초과!")
             self.handle_timeout()
 
+    # 0초 되면 오답 처리 함수
     def handle_timeout(self) -> None:
         if self.current is None or self.checked:
             return
