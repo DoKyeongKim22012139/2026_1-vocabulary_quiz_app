@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import ttk, font
 
 from vocabulary_quiz_app.quiz_logic import Word, check_answer, draw_word
+from vocabulary_quiz_app.quiz_timer import QuizTimer
 
 
 class VocabularyQuizApp:
@@ -28,7 +29,7 @@ class VocabularyQuizApp:
         # 엔터 누를때 정답이 적혀있으면 채점, 없으면 다음으로 넘어감 그리고 한번 더 누르면 다음 단어로 넘어감
         root.bind("<Return>", lambda event: self.check_current() if not self.checked else self.next_word())
         
-        self.setup_timer()
+        self.timer =QuizTimer(root, time_limit=10, on_timeout=self.handle_timeout)
 
         self.word_var = tk.StringVar(value="단어를 불러오는 중...")
         self.feedback_var = tk.StringVar(value="")
@@ -63,7 +64,7 @@ class VocabularyQuizApp:
         self.answer_entry.focus()
 
         #단어 넘어갈때마다 타이머 시작
-        self.reset_and_start_timer()
+        self.timer.start()
 
     def check_current(self) -> None:
         if self.current is None or self.checked:
@@ -71,8 +72,7 @@ class VocabularyQuizApp:
         self.checked = True
 
         # 사용자가 답을 제출하면 카운트 멈춤
-        if self.timer_job:
-            self.root.after_cancel(self.timer_job)
+        self.timer.stop()
         
         self.total += 1
         user_input = self.answer_entry.get()
@@ -84,35 +84,7 @@ class VocabularyQuizApp:
         self.score_var.set(f"Score: {self.score}/{self.total}")
         self.check_button.state(["disabled"])
 
-    #타이머 세팅
-    def setup_timer(self) -> None:
-        self.time_limit=10
-        self.time_left=self.time_limit
-        self.timer_job=None #타이머 이벤트 취소 변수 
-
-        #타이머 글자 변수 생성 및 ui 배치
-        self.time_var = tk.StringVar(value=f"남은 시간: {self.time_left}")
-        ttk.Label(self.root, textvariable=self.time_var, font=("NanumGothic", 12, "bold"), foreground="red").pack(pady=(10, 0))
-
-    #타이머 리셋하고 다시 시작하는 함수
-    def reset_and_start_timer(self) -> None:
-        if self.timer_job:
-            self.root.after_cancel(self.timer_job)
-        self.time_left = self.time_limit
-        self.time_var.set(f"남은 시간: {self.time_left}초")
-        self.update_timer()
-
-    # 카운트 다운 함수
-    def update_timer(self) -> None:
-        if self.checked: #채점이 완료된 상태면 타이머 정지
-            return
-        if self.time_left > 0:
-            self.time_left -= 1
-            self.time_var.set(f"남은 시간: {self.time_left}초")
-            self.timer_job = self.root.after(1000, self.update_timer) 
-        else:
-            self.time_var.set("시간 초과!")
-            self.handle_timeout()
+  
 
     # 0초 되면 오답 처리 함수
     def handle_timeout(self) -> None:
