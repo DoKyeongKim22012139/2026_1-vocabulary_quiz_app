@@ -22,7 +22,7 @@ class VocabularyQuizApp:
         self.default_font.configure(family="NanumGothic", size=12)
 
         root.title("Vocabulary Quiz")
-        root.geometry("420x300")
+        root.geometry("420x280")
         root.resizable(False, False)
 
         # 엔터 누를때 정답이 적혀있으면 채점, 없으면 다음으로 넘어감 그리고 한번 더 누르면 다음 단어로 넘어감
