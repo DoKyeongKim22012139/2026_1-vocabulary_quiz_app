@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import ttk, font
 
 from vocabulary_quiz_app.quiz_logic import Word, check_answer, draw_word
-
+from vocabulary_quiz_app.attendance import AttendanceManager
 
 class VocabularyQuizApp:
     def __init__(self, root: tk.Tk, words: list[Word]) -> None:
@@ -16,6 +16,10 @@ class VocabularyQuizApp:
         self.checked = False
         self.score = 0
         self.total = 0
+
+        #출석받아오고 세팅
+        self.attendance = AttendanceManager()
+        self.attendance.update_streak()
 
         self.default_font = font.nametofont("TkDefaultFont")
         self.default_font.configure(family="NanumGothic", size=12)
@@ -28,11 +32,16 @@ class VocabularyQuizApp:
         self.feedback_var = tk.StringVar(value="")
         self.score_var = tk.StringVar(value="Score: 0/0")
 
+        #ui 표시
+        self.attendance_var = tk.StringVar(value=f"연속 출석: {self.attendance.get_streak()}일")
+        ttk.Label(root,textvariable=self.attendance_var).pack(pady=(8, 4))
+
         ttk.Label(root, text="영단어").pack(pady=(16, 4))
         ttk.Label(root, textvariable=self.word_var, font=("NanumGothic", 24)).pack()
 
         self.answer_entry = ttk.Entry(root, font=("NanumGothic", 14))
         self.answer_entry.pack(pady=12, ipadx=6, ipady=4)
+        
 
         buttons = ttk.Frame(root)
         buttons.pack(pady=6)
@@ -61,6 +70,13 @@ class VocabularyQuizApp:
             return
         self.checked = True
         self.total += 1
+
+        #5문제 이상을 풀어야 출석 인정
+        if self.total == 5:
+            if self.attendance.mark_attendance():
+                self.attendance_var.set(f"연속 출석: {self.attendance.get_streak()}일")
+        self.feedback_var.set("오늘 출석 완료!")
+
         user_input = self.answer_entry.get()
         if check_answer(self.current, user_input):
             self.score += 1
